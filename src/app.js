@@ -2,10 +2,17 @@ const express = require('express');
 
 const app = express();
 
+const { adminAuth, userAuth } = require("./middlewares/auth");
 
 
 app.use("/test", (req, res) => {
     res.send("Test endpoint reached on the server!, Namaste");
+});
+
+app.use("/user", userAuth);
+
+app.get("/admin/getAllData", adminAuth, (req, res) => {
+    res.send("Admin Data sent");
 });
 
 app.get('/user', (req, res) => {
