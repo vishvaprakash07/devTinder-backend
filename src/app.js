@@ -1,49 +1,40 @@
 const express = require('express');
+const connectDB = require('./config/database');
+const User = require('./models/user');
 
 const app = express();
 
-const { adminAuth, userAuth } = require("./middlewares/auth");
+app.post('/signup', async (req, res) => {
+    const userObj = {
+        firstName: "Sachin",
+        lastName: "Tendulkar",
+        email: "sachin.tendulkar@gmail.com",
+        password: "abcd1234",
+    }
 
+    // Create a new user instance
+    const user = new User(userObj);
 
-app.use("/test", (req, res) => {
-    res.send("Test endpoint reached on the server!, Namaste");
+    // Save the user to the database
+    try {
+        await user.save();
+        res.send("User added successfully");
+    } catch(err) {
+        res.status(400).send("Error adding user" + err.message);
+    }
 });
 
-app.use("/user", userAuth);
-
-app.get("/admin/getAllData", adminAuth, (req, res) => {
-    res.send("Admin Data sent");
+connectDB()
+.then(() => {
+    console.log("Connected to MongoDB successfully");
+    app.listen(7777, () => {
+        console.log('Server is running on port 7777');
+    });
+})
+.catch((err) => {
+    console.error("Error connecting to MongoDB");
 });
 
-app.get('/user', (req, res) => {
-    res.send({ firstName: "Vishva", age: 28 });
-});
 
-app.post('/user', (req, res) => {
-    res.send("Created user successfully");
-});
 
-app.put('/user', (req, res) => {
-    res.send("Updated user successfully");
-});
-
-app.delete('/user', (req, res) => {
-    res.send("Deleted user successfully");
-});
-
-app.use("/hello/123", (req, res) => {
-    res.send("Hello, World! 123");
-});
-
-app.use("/hello", (req, res) => {
-    res.send("Hello, World!");
-});
-
-app.use("/", (req, res) => {
-    res.send("Welcome to DevTinder Backend!");
-});
-
-app.listen(7777, () => {
-    console.log('Server is running on port 7777');
-});
 
