@@ -1,22 +1,80 @@
 const express = require('express');
 const connectDB = require('./config/database');
+const bcrypt = require("bcrypt");
 const User = require('./models/user');
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
+const { validateSignUpData } = require("./utils/validation");
+const { userAuth } = require("./middlewares/auth");
 
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 
+
+//signup user API - POST /signup
 app.post('/signup', async (req, res) => {
-
-    // Create a new user instance
-    const user = new User(req.body);
-
-    // Save the user to the database
     try {
+        //Validate the signup data
+        validateSignUpData(req);
+
+        const { firstName, lastName, email, password, age, gender, about, skills } = req.body;
+
+        //encrypt the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create a new user instance
+        const user = new User({
+            firstName,
+            lastName,
+            email,
+            password: hashedPassword,
+            age,
+            gender,
+            about,
+            skills
+        });
+
+        // Save the user to the database
         await user.save();
         res.send("User added successfully");
     } catch(err) {
         res.status(400).send("Error adding user" + err.message);
+    }
+});
+
+//login user API - POST /login
+app.post("/login", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const user = await User.findOne({ email: email });
+        if(!user) {
+            throw new Error("Invalid credentials");
+        }
+        const isPasswordMatch = await bcrypt.compare(password, user.password);
+        if(isPasswordMatch) {
+            //Create a JWT token
+            const token = jwt.sign({ _id: user._id }, "DEV@Tinder$790");
+            //Add the token to cookie and send the response back to the user
+            res.cookie("token", token);
+            res.send("Login successful");
+        } else {
+            throw new Error("Invalid credentials");
+        }
+
+    } catch(err) {
+        res.status(400).send("Error logging in " + err.message);
+    }
+});
+
+//profie API - GET /user
+app.get("/profile", userAuth, async (req, res) => {
+    try {
+        const user = req.user;
+        res.send(user);
+    } catch(err) {
+        res.status(400).send("Error fetching profile " + err.message);
     }
 });
 
