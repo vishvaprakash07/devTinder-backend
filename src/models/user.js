@@ -52,7 +52,8 @@ const userSchema = mongoose.Schema({
             if(!validator.isURL(value)){
                 throw new Error("Invalid URL format");
             }
-        }
+        },
+        default: "https://img.freepik.com/premium-vector/stylish-default-user-profile-photo-avatar-vector-illustration_664995-353.jpg"
     },
     about: {
         type: String,
